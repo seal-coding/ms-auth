@@ -1,0 +1,47 @@
+version: '3'
+services:
+  mariadb:
+    image: mariadb
+    container_name: seal.auth.mariadb
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=seal-auth
+    restart: unless-stopped
+    volumes:
+      - ./volumes/mariadb/mysql:/var/lib/mysql
+
+  pma:
+    image: phpmyadmin/phpmyadmin
+    container_name: seal.auth.pma
+    environment:
+      - PMA_HOST=mariadb
+    restart: unless-stopped
+    ports:
+      - 8000:80
+    links:
+      - mariadb
+
+  ms-auth:
+    build:
+      context: .
+      dockerfile: ./docker/python/dev/Dockerfile
+    container_name: seal.auth.app
+    environment:
+      - PORT=3000
+      - ENV=development
+      - DEBUG=True
+      - MYSQL_USERNAME=root
+      - MYSQL_PASSWORD=root
+      - MYSQL_HOST=mariadb
+      - MYSQL_DATABASE=seal-auth
+    ports:
+      - "3000:3000"
+    links:
+      - mariadb
+    volumes:
+      - .:/app
+
+networks:
+  default:
+    external:
+      name: seal-coding
